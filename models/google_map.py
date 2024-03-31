@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 
 # API 키 및 URL 설정
-api_key = "AIzaSyDGo7v_t8bl1GZKU0MuX6UMsVJVSAeHgMk"  # 여기에 실제 API 키 입력
+api_key = ""  # 여기에 실제 API 키 입력
 query = "restaurants in Gwangjin-gu Seoul"
 url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&key={api_key}"
 
