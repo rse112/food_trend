@@ -220,7 +220,7 @@ if __name__ == "__main__":
             "율식당",
             "꿀곱창",
             "IKH몽골식당",
-            "마라전설 구의점",
+            "범일동맛집",
         ],
         "id": get_secret("clients")["id_1"]["client_id"],
         "pw": get_secret("clients")["id_1"]["client_secret"],
