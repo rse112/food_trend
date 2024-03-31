@@ -5,7 +5,7 @@ import aiohttp
 import asyncio
 import pandas as pd
 import json
-from utils import get_secret
+from models.utils import get_secret
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 

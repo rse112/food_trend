@@ -5,8 +5,8 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from trend import trend_maincode
-from utils import get_secret
+from models.trend import trend_maincode
+from models.utils import get_secret
 import asyncio
 import time
 
@@ -58,7 +58,7 @@ def prepare_data(table, today, mode, days=None, year=None, years=None):
 
     days = 1
     year = 1
-    years = 3
+    years = 1
     period = [1, 1]
     Gap = 1
 
@@ -112,7 +112,7 @@ def set_analysis_period(table, today, days=0, year=0, yearss=0, mode="daily"):
         ]
 
         # 데이터가 충분한지 확인
-        dateLimit = 350
+        dateLimit = 100
 
         if len(table_tmp) < dateLimit:
             return None, None, None
@@ -216,7 +216,12 @@ if __name__ == "__main__":
     # 검색 기준일
     standard_time = datetime.now()
     params = {
-        "search_keywords": ["혜화동", "T1"],
+        "search_keywords": [
+            "율식당",
+            "꿀곱창",
+            "IKH몽골식당",
+            "마라전설 구의점",
+        ],
         "id": get_secret("clients")["id_1"]["client_id"],
         "pw": get_secret("clients")["id_1"]["client_secret"],
         "api_url": "https://openapi.naver.com/v1/datalab/search",
