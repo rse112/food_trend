@@ -2,12 +2,13 @@ import asyncio
 import sys
 
 import aiohttp
-import asyncio
 import pandas as pd
 import json
-from models.utils import get_secret
+
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from models.utils import get_secret
+
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -78,8 +79,8 @@ async def trend_maincode(params, clients, api_url):
     results = []
     for keyword in search_keywords:
         for client_key, client_info in clients.items():
-            client_id = params["id"]
-            client_secret = params["pw"]
+            client_id = client_info["client_id"]
+            client_secret = client_info["client_secret"]
 
             try:
                 df_search_trend = await trend_load_async(

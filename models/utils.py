@@ -29,3 +29,6 @@ def get_secret(
         if default_value is not None:
             return default_value
         raise EnvironmentError(f"Set the {key} environment variable.")
+    
+
+    

@@ -2,55 +2,72 @@ import requests
 import pandas as pd
 import time
 from models.utils import get_secret
-
+import numpy as np
 # API 키 및 URL 설정
 api_key = get_secret("google_api_key")  # 여기에 실제 API 키 입력
 
-query = "restaurants in Gwangjin-gu Seoul"
-url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&key={api_key}"
+# 영역 정의
+min_lat, min_lon = 37.53961654940462, 127.06422361155427
 
-restaurants = []  # 모든 결과를 저장할 리스트
+# 최대 위도/경도 (직사각형의 반대편 귀퉁이)
+max_lat, max_lon = 37.54628751603561, 127.0868159672261
 
-while True:
-    response = requests.get(url)
-    if response.status_code != 200:
-        print(f"요청 실패: 상태 코드 {response.status_code}")
-        break  # 상태 코드가 200이 아니면 루프 중단
+# 50미터 간격으로 그리드 생성
+lat_step = 50 / 110574  # 위도 1도에 대략 111km
+lon_step = 50 / (111320 * np.cos(np.radians(min_lat)))  # 경도 1도에 대략 111km * cos(latitude)
 
-    json_response = response.json()
-    
-    # API 응답의 상태 필드 확인
-    if json_response["status"] != "OK":
-        print(f"API 요청 실패: {json_response.get('error_message', '알 수 없는 오류')}")
-        break  # API 상태가 'OK'가 아니면 루프 중단
+# 그리드 포인트 생성
+lat_points = np.arange(min_lat, max_lat, lat_step)
+lon_points = np.arange(min_lon, max_lon, lon_step)
 
-    # 현재 페이지의 결과를 리스트에 추가
-    restaurants.extend(json_response["results"])
-    
-    # next_page_token이 있으면, 다음 페이지 요청을 준비
-    page_token = json_response.get("next_page_token")
-    if page_token:
-        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken={page_token}&key={api_key}"
-        
-        # Google 문서에 따르면, 다음 페이지의 결과가 준비되기까지 몇 초의 지연이 필요할 수 있음
-        time.sleep(2)  # 2초 대기
-    else:
-        break  # 더 이상 페이지가 없으면 루프 종료
+# 수집된 데이터를 저장할 리스트
+restaurants = []
 
+# 각 그리드 포인트에 대해 요청 실행
+for lat in lat_points:
+    for lon in lon_points:
+        url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lon}&radius=50&type=restaurant&key={api_key}"
+
+        while True:
+            response = requests.get(url)
+            if response.status_code != 200:
+                print(f"Failed to fetch data: Status code {response.status_code}")
+                break
+
+            data = response.json()
+            if data["status"] != "OK":
+                print(f"API request failed: {data.get('error_message', 'Unknown error')}")
+                break
+
+            # 현재 페이지의 결과 추가
+            restaurants.extend(data["results"])
+            
+            # 다음 페이지 토큰 확인
+            page_token = data.get("next_page_token")
+            if page_token:
+                url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken={page_token}&key={api_key}"
+                time.sleep(2)  # 대기 시간 준수
+            else:
+                break  # 다음 페이지가 없으면 중단
+
+# 결과를 DataFrame으로 변환
 if restaurants:
-    # 음식점 데이터를 DataFrame으로 변환
-    restaurants_df = pd.DataFrame(
-        {
-            "Name": [restaurant["name"] for restaurant in restaurants],
-            "Address": [restaurant.get("formatted_address", "No address provided") for restaurant in restaurants],
-            "Types": [", ".join(restaurant["types"]) for restaurant in restaurants],
-            "Latitude": [restaurant["geometry"]["location"]["lat"] for restaurant in restaurants],
-            "Longitude": [restaurant["geometry"]["location"]["lng"] for restaurant in restaurants],
-        }
-    )
+    df_restaurants = pd.DataFrame(restaurants)
+    # 중복 데이터 제거
+    df_restaurants = df_restaurants.drop_duplicates(subset='place_id')
+
+    # 필요한 컬럼 선택
+    df_restaurants = df_restaurants[['name', 'vicinity', 'geometry', 'types']]
+
+    # 위도, 경도 컬럼 추가
+    df_restaurants['latitude'] = df_restaurants.apply(lambda row: row['geometry']['location']['lat'], axis=1)
+    df_restaurants['longitude'] = df_restaurants.apply(lambda row: row['geometry']['location']['lng'], axis=1)
+    
+    # 필요 없는 컬럼 삭제
+    df_restaurants = df_restaurants.drop(columns='geometry')
 
     # CSV 파일로 저장
-    restaurants_df.to_csv("restaurants_in_gwangjin_gu_seoul_extended.csv", index=False)
-    print("확장된 CSV 파일이 저장되었습니다.")
+    df_restaurants.to_csv("./datarestaurants_in_gwangjin_gu_seoul.csv", index=False)
+    print("Data collection complete. CSV file saved.")
 else:
-    print("API로부터 음식점 데이터를 수집하지 못했습니다.")
+    print("No data collected.")

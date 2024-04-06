@@ -112,7 +112,7 @@ def set_analysis_period(table, today, days=0, year=0, yearss=0, mode="daily"):
         ]
 
         # 데이터가 충분한지 확인
-        dateLimit = 100
+        dateLimit = 200
 
         if len(table_tmp) < dateLimit:
             return None, None, None
