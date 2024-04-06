@@ -1,0 +1,8 @@
+geopandas
+matplotlib
+pytz
+python-dateutil
+pandas
+numpy
+requests
+aiohttp
